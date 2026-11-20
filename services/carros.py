@@ -55,7 +55,7 @@ def fila_a_carro(fila):
         "unico_dueno": bool(fila.get("unico_dueno")),
         "zona": fila["zona"],
         "estado": fila["estado"],
-        "foto": None,  # las fotos llegan en la Etapa 4
+        "foto": None,  # se llena con _con_fotos() a partir de carros_fotos
     }
 
 
@@ -68,6 +68,40 @@ def fila_a_agencia(fila):
         "verificado": fila["estado_verificacion"] == "verificado",
         "carros": None,  # el conteo se agregará con el panel de agencia
     }
+
+
+def _foto_principal(ruta):
+    """Por ahora solo se aceptan nombres de archivo simples (ej. "camry.jpg")
+    que existan en static/images/carros/. Las fotos subidas a Supabase Storage
+    llegarán en la Etapa 4."""
+    ruta = (ruta or "").strip()
+    if not ruta or "/" in ruta or "\\" in ruta or ".." in ruta:
+        return {}
+    return {"foto": ruta}
+
+
+def _con_fotos(filas):
+    """Pasa las filas a carros y les agrega su primera foto (tabla carros_fotos).
+
+    Si la consulta de fotos falla, los carros se muestran sin foto
+    en lugar de romper la página.
+    """
+    carros = [fila_a_carro(f) for f in filas]
+    ids = [str(c["id"]) for c in carros]
+    if not ids:
+        return carros
+    try:
+        fotos_filas = (obtener_cliente().table("carros_fotos")
+                       .select("carro_id,ruta_archivo,orden")
+                       .in_("carro_id", ids).order("orden").execute().data) or []
+    except Exception:
+        return carros
+    primera = {}
+    for f in fotos_filas:
+        primera.setdefault(str(f.get("carro_id")), f.get("ruta_archivo"))
+    for c in carros:
+        c.update(_foto_principal(primera.get(str(c["id"]))))
+    return carros
 
 
 def _ejecutar(consulta):
@@ -94,7 +128,7 @@ def listar_catalogo(filtros):
     if modo_ejemplo():
         en_catalogo = [a for a in datos_ejemplo.CARROS if a["estado"] in ESTADOS_CATALOGO]
         return [a for a in en_catalogo if all(a.get(c) == v for c, v in filtros.items())]
-    return [fila_a_carro(f) for f in _ejecutar(consulta_catalogo(filtros))]
+    return _con_fotos(_ejecutar(consulta_catalogo(filtros)))
 
 
 def listar_destacados(cantidad=4):
@@ -103,7 +137,7 @@ def listar_destacados(cantidad=4):
     consulta = (obtener_cliente().table("carros").select(CAMPOS_CARRO)
                 .in_("estado", ["urgente", "disponible"])
                 .order("publicado_en", desc=True).limit(cantidad))
-    return [fila_a_carro(f) for f in _ejecutar(consulta)]
+    return _con_fotos(_ejecutar(consulta))
 
 
 def listar_robados_recuperados():
@@ -112,7 +146,7 @@ def listar_robados_recuperados():
     consulta = (obtener_cliente().table("carros").select(CAMPOS_CARRO)
                 .in_("estado", ESTADOS_ROBADOS)
                 .order("publicado_en", desc=True).limit(LIMITE_RESULTADOS))
-    return [fila_a_carro(f) for f in _ejecutar(consulta)]
+    return _con_fotos(_ejecutar(consulta))
 
 
 def obtener_carro(carro_id):
@@ -126,7 +160,7 @@ def obtener_carro(carro_id):
     consulta = (obtener_cliente().table("carros").select(CAMPOS_CARRO)
                 .eq("id", carro_id).limit(1))
     filas = _ejecutar(consulta)
-    return fila_a_carro(filas[0]) if filas else None
+    return _con_fotos(filas[:1])[0] if filas else None
 
 
 def listar_agencias():
