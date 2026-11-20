@@ -1,0 +1,15 @@
+<!-- Ruedas · Plantilla "Confirm signup" de Supabase
+     Asunto sugerido: Confirma tu cuenta de Ruedas
+     Pega TODO este contenido en el cuerpo de la plantilla. -->
+<div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; color: #2F3A31;">
+  <h2 style="color: #6B8F71;">¡Bienvenida o bienvenido a Ruedas!</h2>
+  <p>Gracias por unirte. Para activar tu cuenta, confirma tu correo:</p>
+  <p style="text-align: center; margin: 28px 0;">
+    <a href="{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=email"
+       style="background: #FF8F5A; color: #ffffff; padding: 12px 28px; border-radius: 999px; text-decoration: none; font-weight: bold;">
+      Confirmar mi correo
+    </a>
+  </p>
+  <p style="font-size: 13px; color: #66705F;">Si no creaste una cuenta en Ruedas, ignora este mensaje.</p>
+  <p style="font-size: 13px; color: #66705F;">Ruedas · Busca tu carro. Encuentra tu camino.</p>
+</div>

@@ -1,0 +1,123 @@
+{# Componentes reutilizables. Se importan con: {% import "componentes.html" as c %} #}
+
+{# Insignia de estado: texto + icono + color #}
+{% macro insignia_estado(clave) %}
+  {% set e = ESTADOS[clave] %}
+  <span class="insignia {{ e.clase }}"><i class="bi {{ e.icono }}" aria-hidden="true"></i> {{ e.texto }}</span>
+{% endmacro %}
+
+{# Foto del carro o marcador si todavía no hay foto #}
+{% macro foto_carro(carro, clase="") %}
+  {% if carro.foto_url %}
+    <img src="{{ carro.foto_url }}" alt="Fotografía de {{ carro.nombre }}" class="foto-carro {{ clase }}" loading="lazy">
+  {% elif foto_existe(carro.foto) %}
+    <img src="{{ url_for('static', filename='images/carros/' ~ carro.foto) }}"
+         alt="Fotografía de {{ carro.nombre }}" class="foto-carro {{ clase }}" loading="lazy">
+  {% else %}
+    <div class="foto-carro foto-pendiente carroceria-{{ carro.carroceria }} {{ clase }}" role="img"
+         aria-label="Foto pendiente de {{ carro.nombre }}">
+      <span class="icono-carro" aria-hidden="true">
+        <svg viewBox="0 0 40 40"><path fill-rule="evenodd" d="M5 25v-5.2c0-.6.2-1.2.6-1.7l1.9-2.3 2.3-5.2A3.5 3.5 0 0 1 13 8.5h14a3.5 3.5 0 0 1 3.2 2.1l2.3 5.2 1.9 2.3c.4.5.6 1.1.6 1.7V25a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Zm8.3-13.5a.8.8 0 0 0-.7.5l-1.6 3.7h18l-1.6-3.7a.8.8 0 0 0-.7-.5H13.3ZM10.5 23a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm19 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><rect x="7" y="26" width="6" height="5.5" rx="1.5"/><rect x="27" y="26" width="6" height="5.5" rx="1.5"/></svg>
+      </span>
+      <small>Foto pendiente</small>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{# Tarjeta de carro para catálogo e inicio #}
+{% macro tarjeta_carro(carro) %}
+  <article class="tarjeta tarjeta-carro h-100" data-carroceria="{{ carro.carroceria }}" data-tamano="{{ carro.tamano }}"
+           data-transmision="{{ carro.transmision }}" data-combustible="{{ carro.combustible }}">
+    <a href="{{ url_for('detalle_carro', carro_id=carro.id) }}" class="enlace-tarjeta" aria-label="Ver {{ carro.nombre }}">
+      <div class="contenedor-foto">
+        {{ foto_carro(carro) }}
+        <div class="insignia-flotante">{{ insignia_estado(carro.estado) }}</div>
+      </div>
+      <div class="p-3">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <h3 class="h5 mb-1">{{ carro.nombre }}</h3>
+          <span class="chip-transmision" title="{{ carro.transmision|capitalize }}">
+            <i class="bi {{ {'automática': 'bi-gear-wide-connected', 'manual': 'bi-gear'}.get(carro.transmision, 'bi-question-circle') }}" aria-hidden="true"></i>
+            <span class="visually-hidden">{{ carro.transmision }}</span>
+          </span>
+        </div>
+        <p class="texto-suave mb-2 small">{{ carro.carroceria|capitalize }} · {{ carro.kilometraje }} · {{ carro.tamano|capitalize }}</p>
+        <p class="small mb-0"><i class="bi bi-geo-alt text-salvia" aria-hidden="true"></i> {{ carro.zona }}, Tijuana</p>
+      </div>
+    </a>
+  </article>
+{% endmacro %}
+
+{# Aviso para funciones que aún no están conectadas #}
+{% macro aviso_etapa(texto) %}
+  <div class="aviso-etapa" role="note">
+    <i class="bi bi-tools" aria-hidden="true"></i>
+    <span>{{ texto }}</span>
+  </div>
+{% endmacro %}
+
+{# ---------------------------------------------------------------------------
+   Alerta Ruedas
+   --------------------------------------------------------------------------- #}
+
+{# Tarjeta de alerta para listas e inicio #}
+{% macro tarjeta_alerta(alerta) %}
+  <article class="tarjeta tarjeta-alerta h-100">
+    <a href="{{ url_for('detalle_alerta', alerta_id=alerta.id) }}" class="enlace-tarjeta" aria-label="Ver alerta de {{ alerta.nombre }}">
+      <div class="contenedor-foto">
+        {{ foto_carro(alerta) }}
+        <span class="sello-alerta"><i class="bi bi-broadcast" aria-hidden="true"></i> Se busca</span>
+      </div>
+      <div class="p-3">
+        <h3 class="h5 mb-1">{{ alerta.nombre }}</h3>
+        <p class="small mb-2">{{ alerta.carroceria|capitalize }} · {{ alerta.color }} · {{ alerta.tamano|capitalize }}</p>
+        <p class="small mb-1"><i class="bi bi-geo-alt text-naranja" aria-hidden="true"></i> {{ alerta.zona_referencia }}</p>
+        <p class="small texto-suave mb-0"><i class="bi bi-clock" aria-hidden="true"></i> Visto {{ alerta.visto_por_ultima_vez|hace_tiempo }}</p>
+        {% if alerta.distancia_km is defined %}
+        <p class="small mb-0 mt-1 {{ 'fw-semibold text-alerta' if alerta.distancia_km <= 15 }}"><i class="bi bi-signpost" aria-hidden="true"></i>
+          {{ 'Menos de 1' if alerta.distancia_km < 1 else alerta.distancia_km|round|int }} km de tu zona</p>
+        {% endif %}
+      </div>
+    </a>
+  </article>
+{% endmacro %}
+
+{# Cómo se ve la notificación en el celular de los vecinos (vista previa) #}
+{% macro notificacion_previa(alerta, radio_km) %}
+  <div class="notificacion-previa" aria-label="Vista previa de la notificación">
+    <div class="notificacion-cabecera">
+      <img src="{{ url_for('static', filename='images/logo-ruedas.svg') }}" alt="" width="18" height="18">
+      <span>Ruedas</span><span class="ms-auto">ahora</span>
+    </div>
+    <strong>Alerta Ruedas: se busca {{ alerta.nombre }}</strong>
+    <p class="mb-0">{{ alerta.carroceria|capitalize }} {{ alerta.color|lower }}, visto por última vez en {{ alerta.zona_referencia }}. Si lo ves, avísale a su dueño.</p>
+  </div>
+{% endmacro %}
+
+{# ---------------------------------------------------------------------------
+   Formularios de cuenta
+   --------------------------------------------------------------------------- #}
+
+{# Campo oculto obligatorio en todo formulario POST (protección CSRF) #}
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{# Contraseña con botón para mostrarla #}
+{% macro campo_contrasena(id, nombre, etiqueta, autocompletar="current-password", ayuda="") %}
+  <label for="{{ id }}" class="form-label small fw-semibold">{{ etiqueta }}</label>
+  <div class="input-group">
+    <input type="password" id="{{ id }}" name="{{ nombre }}" class="form-control" required
+           autocomplete="{{ autocompletar }}" {% if autocompletar == 'new-password' %}minlength="8" maxlength="72"{% endif %}
+           {% if ayuda %}aria-describedby="{{ id }}-ayuda"{% endif %}>
+    <button class="btn btn-contorno boton-mostrar" type="button" data-mostrar="{{ id }}" aria-label="Mostrar contraseña">
+      <i class="bi bi-eye" aria-hidden="true"></i>
+    </button>
+  </div>
+  {% if ayuda %}<p class="ayuda mb-0" id="{{ id }}-ayuda">{{ ayuda }}</p>{% endif %}
+{% endmacro %}
+
+{# Aviso cuando las cuentas no están disponibles (modo de ejemplo) #}
+{% macro aviso_sin_supabase(modo_ejemplo) %}
+  {% if modo_ejemplo %}
+    {{ aviso_etapa("Las cuentas necesitan Supabase. Sigue GUIA_SUPABASE.md y configura tu archivo .env.") }}
+  {% endif %}
+{% endmacro %}

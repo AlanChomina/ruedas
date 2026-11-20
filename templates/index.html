@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% import "componentes.html" as c %}
+{% block titulo %}Inicio{% endblock %}
+
+{% block contenido %}
+{% if alertas %}
+<!-- Alertas activas -->
+<section class="banda-alerta" aria-label="Alertas activas">
+  <div class="container d-flex flex-wrap align-items-center gap-2 gap-md-3 py-2">
+    <span class="etiqueta-alerta"><i class="bi bi-broadcast"></i> Alerta Ruedas</span>
+    <span class="flex-grow-1">Se busca:
+      {% for a in alertas %}<a href="{{ url_for('detalle_alerta', alerta_id=a.id) }}"><strong>{{ a.nombre }}</strong></a> ({{ a.zona_referencia.split(',')[0] }}){{ ', ' if not loop.last }}{% endfor %}
+    </span>
+    <a href="{{ url_for('alertas') }}" class="enlace-flecha">Ver alertas <i class="bi bi-arrow-right"></i></a>
+  </div>
+</section>
+{% endif %}
+<!-- Portada -->
+<section class="portada">
+  <div class="container py-5">
+    <div class="row align-items-center g-4 g-lg-5">
+      <div class="col-lg-6">
+        <span class="etiqueta-seccion"><i class="bi bi-geo-alt-fill"></i> Tijuana, Baja California</span>
+        <h1 class="display-titulo mt-3">Busca tu carro.<br><span class="text-naranja">Encuentra tu camino.</span></h1>
+        <p class="lead mt-3">Ruedas conecta a quienes quieren comprar un carro con agencias, lotes y vendedores particulares. Juntos hacemos que cada compra sea transparente y segura.</p>
+
+        <form class="buscador mt-4" action="{{ url_for('catalogo') }}" method="get" role="search">
+          <label for="buscar-carroceria" class="visually-hidden">Tipo</label>
+          <select id="buscar-carroceria" name="carroceria" class="form-select">
+            <option value="">Todos los tipos</option>
+            <option value="sedán">Sedanes</option>
+            <option value="camioneta">Camionetas</option>
+            <option value="hatchback">Hatchbacks</option>
+            <option value="pickup">Pickups</option>
+          </select>
+          <label for="buscar-tamano" class="visually-hidden">Tamaño</label>
+          <select id="buscar-tamano" name="tamano" class="form-select">
+            <option value="">Cualquier tamaño</option>
+            <option value="compacto">Compacto</option>
+            <option value="mediano">Mediano</option>
+            <option value="grande">Grande</option>
+          </select>
+          <button class="btn btn-naranja" type="submit"><i class="bi bi-search"></i> Buscar</button>
+        </form>
+      </div>
+      <div class="col-lg-6">
+        <div class="collage">
+          {% for carro in destacados[:3] %}
+            <div class="collage-item collage-{{ loop.index }}">{{ c.foto_carro(carro) }}</div>
+          {% endfor %}
+          <div class="burbuja-dato">
+            <i class="bi bi-shield-check"></i>
+            <div><strong>Agencias verificadas</strong><br><small>Revisadas por el equipo de Ruedas</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Accesos rápidos -->
+<section class="container mt-n4 position-relative">
+  <div class="row g-3">
+    {% set accesos = [
+      ('catalogo', 'bi-car-front', 'Comprar', 'Encuentra carros revisados cerca de ti'),
+      ('alertas', 'bi-broadcast', 'Alerta Ruedas', 'Avisa a tus vecinos si te roban el carro'),
+      ('agencias', 'bi-buildings', 'Agencias', 'Conoce lotes y agencias verificadas'),
+      ('comunidad', 'bi-people', 'Comunidad', 'Historias, rodadas y consejos')] %}
+    {% for ruta, icono, titulo, texto in accesos %}
+    <div class="col-6 col-lg-3">
+      <a href="{{ url_for(ruta) }}" class="tarjeta acceso h-100">
+        <span class="icono-circulo"><i class="bi {{ icono }}"></i></span>
+        <h2 class="h6 mt-3 mb-1">{{ titulo }}</h2>
+        <p class="small texto-suave mb-0">{{ texto }}</p>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Destacados -->
+<section class="container mt-5 pt-3">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+    <div>
+      <span class="etiqueta-seccion">En venta</span>
+      <h2 class="titulo-seccion mt-2">Listos para rodar contigo</h2>
+    </div>
+    <a href="{{ url_for('catalogo') }}" class="enlace-flecha">Ver todos <i class="bi bi-arrow-right"></i></a>
+  </div>
+  <div class="row g-4">
+    {% for carro in destacados %}
+      <div class="col-12 col-sm-6 col-lg-3">{{ c.tarjeta_carro(carro) }}</div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Cómo funciona -->
+<section class="container mt-5 pt-3">
+  <div class="tarjeta bloque-pasos p-4 p-lg-5">
+    <span class="etiqueta-seccion">Compra segura</span>
+    <h2 class="titulo-seccion mt-2 mb-4">¿Cómo funciona?</h2>
+    <div class="row g-4">
+      {% set pasos = [
+        ('bi-search', 'Encuentra', 'Explora fichas con kilometraje, servicios y detalles de cada carro.'),
+        ('bi-clipboard-check', 'Solicita', 'Envía tu solicitud y cuéntale al vendedor qué buscas.'),
+        ('bi-chat-dots', 'Conversa', 'El vendedor revisa tu solicitud y coordina una prueba de manejo.'),
+        ('bi-key', 'Estrena', 'Cierra el trato con papeles en regla y llévate tu carro.')] %}
+      {% for icono, titulo, texto in pasos %}
+      <div class="col-sm-6 col-lg-3">
+        <div class="paso">
+          <span class="numero-paso">{{ loop.index }}</span>
+          <i class="bi {{ icono }} icono-paso"></i>
+          <h3 class="h6 mt-2">{{ titulo }}</h3>
+          <p class="small texto-suave mb-0">{{ texto }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Agencias -->
+<section class="container mt-5 pt-3">
+  <span class="etiqueta-seccion">Quienes venden</span>
+  <h2 class="titulo-seccion mt-2 mb-3">Agencias y lotes</h2>
+  <div class="row g-4">
+    {% for agencia in agencias %}
+    <div class="col-md-4">
+      {% include "_tarjeta_agencia.html" %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Llamado a la acción -->
+<section class="container mt-5">
+  <div class="cta p-4 p-lg-5">
+    <div class="row align-items-center g-3">
+      <div class="col-lg-8">
+        <h2 class="titulo-seccion text-white mb-2">¿Vendes carros o tienes una agencia?</h2>
+        <p class="mb-0">Publica tus carros, recibe solicitudes y organiza tus ventas desde un solo lugar.</p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a href="{{ url_for('registro') }}" class="btn btn-crema btn-lg">Registrar mi agencia</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

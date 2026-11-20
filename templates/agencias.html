@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "componentes.html" as c %}
+{% block titulo %}Agencias{% endblock %}
+
+{% block contenido %}
+<section class="encabezado-pagina">
+  <div class="container py-4">
+    <h1 class="titulo-pagina">Agencias y lotes</h1>
+    <p class="mb-0">Negocios que compran, revisan y venden carros con papeles en regla.</p>
+  </div>
+</section>
+
+<div class="container mt-4">
+  <div class="tarjeta p-3 mb-4 d-flex gap-3 align-items-start">
+    <i class="bi bi-shield-check fs-3 text-salvia"></i>
+    <p class="small mb-0">La insignia <strong>Agencia verificada</strong> solo aparece cuando el equipo de Ruedas revisa la documentación dla agencia. La verificación reduce riesgos, pero no sustituye tu propio criterio.</p>
+  </div>
+  <div class="row g-4">
+    {% for agencia in agencias %}
+      <div class="col-md-6 col-lg-4">{% include "_tarjeta_agencia.html" %}</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

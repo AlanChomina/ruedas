@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "componentes.html" as c %}
+{% block titulo %}Robados y recuperados{% endblock %}
+
+{% block contenido %}
+<section class="encabezado-pagina">
+  <div class="container py-4">
+    <h1 class="titulo-pagina">Robados y recuperados</h1>
+    <p class="mb-0">Carros reportados como robados o recuperados. <strong>No están en venta.</strong></p>
+  </div>
+</section>
+
+<div class="container mt-4">
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <button class="btn btn-naranja" disabled><i class="bi bi-megaphone"></i> Reportar carro robado</button>
+    <button class="btn btn-contorno" disabled><i class="bi bi-geo-alt"></i> Reportar carro recuperado</button>
+  </div>
+  {{ c.aviso_etapa("Los reportes con fotografía, ubicación y nivel de urgencia se activarán en la Etapa 6.") }}
+  <a href="{{ url_for('alertas') }}" class="tarjeta p-3 mt-3 d-flex gap-3 align-items-center enlace-alerta-robados">
+    <span class="icono-circulo icono-alerta"><i class="bi bi-broadcast"></i></span>
+    <span><strong>¿Te robaron tu carro?</strong><br><small class="texto-suave">Emite una Alerta Ruedas y avisaremos a las personas cercanas.</small></span>
+    <i class="bi bi-arrow-right ms-auto"></i>
+  </a>
+
+  <div class="row g-4 mt-1">
+    {% for carro in carros %}
+      <div class="col-12 col-sm-6 col-lg-4">{{ c.tarjeta_carro(carro) }}</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

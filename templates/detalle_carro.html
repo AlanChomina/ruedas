@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% import "componentes.html" as c %}
+{% block titulo %}{{ carro.nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="container mt-4">
+  <nav aria-label="Ruta de navegación" class="small mb-3">
+    {% if carro.estado in ['robado', 'recuperado'] %}
+      <a href="{{ url_for('robados') }}"><i class="bi bi-arrow-left"></i> Robados y recuperados</a>
+    {% else %}
+      <a href="{{ url_for('catalogo') }}"><i class="bi bi-arrow-left"></i> Volver al catálogo</a>
+    {% endif %}
+  </nav>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="tarjeta overflow-hidden">{{ c.foto_carro(carro, "foto-detalle") }}</div>
+    </div>
+    <div class="col-lg-6">
+      {{ c.insignia_estado(carro.estado) }}
+      <h1 class="titulo-pagina mt-2">{{ carro.nombre }}</h1>
+      <p class="texto-suave"><i class="bi bi-geo-alt"></i> {{ carro.zona }}, Tijuana (ubicación aproximada)</p>
+      <p class="lead">{{ carro.detalles }}</p>
+
+      <div class="row g-2 my-3">
+        {% set datos = [
+          ('Tipo', carro.carroceria|capitalize), ('Versión', carro.version), ('Kilometraje', carro.kilometraje),
+          ('Tamaño', carro.tamano|capitalize), ('Transmisión', carro.transmision|capitalize), ('Combustible', carro.combustible|capitalize),
+          ('Servicios', 'Al día' if carro.servicios_al_dia else 'Pendientes'), ('Único dueño', 'Sí' if carro.unico_dueno else 'No')] %}
+        {% for etiqueta, valor in datos %}
+        <div class="col-6 col-sm-3">
+          <div class="dato"><small>{{ etiqueta }}</small><strong>{{ valor }}</strong></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if carro.estado in ['robado', 'recuperado'] %}
+        <button class="btn btn-naranja btn-lg w-100" disabled>Tengo información sobre {{ carro.nombre if carro.nombre != 'Sin identificar' else 'este carro' }}</button>
+      {% elif carro.estado == 'vendido' %}
+        <p class="fw-semibold">¡Este carro ya se vendió!</p>
+      {% else %}
+        <button class="btn btn-naranja btn-lg w-100" disabled>Solicitar compra</button>
+      {% endif %}
+      {{ c.aviso_etapa("Las solicitudes y el contacto con el responsable se activarán cuando existan cuentas verificadas (Etapas 3 y 5).") }}
+    </div>
+  </div>
+</div>
+{% endblock %}

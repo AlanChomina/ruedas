@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titulo %}Cómo funciona{% endblock %}
+
+{% block contenido %}
+<section class="encabezado-pagina">
+  <div class="container py-4">
+    <h1 class="titulo-pagina">Cómo funciona Ruedas</h1>
+    <p class="mb-0">Una comunidad para comprar, vender y cuidar tu carro, con la seguridad como prioridad.</p>
+  </div>
+</section>
+
+<div class="container mt-4">
+  <div class="row g-4">
+    {% set perfiles = [
+      ('bi-key', 'Compradores', 'Buscan, solicitan y dan seguimiento a su compra.'),
+      ('bi-person-badge', 'Vendedores particulares', 'Publican su carro y revisan solicitudes.'),
+      ('bi-buildings', 'Agencias y lotes', 'Gestionan su inventario, ventas y promociones.'),
+      ('bi-megaphone', 'Reportes ciudadanos', 'Avisan de carros robados, recuperados o abandonados.'),
+      ('bi-wrench', 'Mecánicos y valuadores', 'Apoyan con revisiones y avalúos independientes.'),
+      ('bi-shop', 'Talleres y negocios', 'Ofrecen servicios a la comunidad automotriz.')] %}
+    {% for icono, titulo, texto in perfiles %}
+    <div class="col-md-6 col-lg-4">
+      <div class="tarjeta p-4 h-100">
+        <span class="icono-circulo"><i class="bi {{ icono }}"></i></span>
+        <h2 class="h6 mt-3">{{ titulo }}</h2>
+        <p class="small texto-suave mb-0">{{ texto }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="tarjeta p-4 p-lg-5 mt-4">
+    <h2 class="titulo-seccion">Niveles de verificación</h2>
+    <ol class="lista-niveles mt-3">
+      <li><strong>Cuenta registrada.</strong> Correo electrónico confirmado.</li>
+      <li><strong>Identidad verificada.</strong> Revisión real de identificación oficial y selfie.</li>
+      <li><strong>Habilitado para comprar o publicar.</strong> Teléfono verificado y cuestionario de compraventa segura.</li>
+      <li><strong>Agencia verificada.</strong> Revisión de la organización por el equipo de Ruedas.</li>
+    </ol>
+    <p class="small texto-suave mb-0">Subir un documento no verifica una cuenta automáticamente. Y una cuenta verificada no garantiza que una persona sea confiable: la agencia o vendedor siempre decide.</p>
+  </div>
+</div>
+{% endblock %}

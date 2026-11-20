@@ -1,0 +1,48 @@
+# Carpeta supabase/
+
+| Carpeta / archivo | Qué es |
+|---|---|
+| `migraciones/001_esquema_inicial.sql` | Tablas, permisos y reglas RLS base. Se ejecuta **una vez**. |
+| `migraciones/002_alertas_ruedas.sql` | Alerta Ruedas: alertas, zonas, avistamientos, notificaciones y la regla de 15 km. **Una vez**, después de la 001. |
+| `migraciones/003_cuentas.sql` | Cuentas: guarda la aceptación del aviso de privacidad al registrarse. **Una vez**, después de la 002. |
+| `migraciones/004_alertas_parte_b.sql` | Contenedor de fotos `fotos-alertas`, `emitir_alerta()` y `renovar_alerta()`. **Una vez**, después de la 003. |
+| `plantillas_correo/` | Correos en español para pegar en Supabase (ver `GUIA_ETAPA3.md`). |
+| `datos_prueba/datos_ficticios.sql` | 2 agencias y 7 carros inventados. Se puede repetir. |
+| `datos_prueba/alerta_ficticia.sql` | Una alerta inventada ("Nissan Tsuru (prueba)"). Se puede repetir. |
+
+## Reglas
+- Las migraciones se ejecutan **en orden** (001, 002, 003…) y **nunca se editan** después de ejecutarlas.
+  Si algo cambia, se crea una migración nueva.
+- Todas se ejecutan en el editor de SQL de tu proyecto de Supabase.
+- Nunca pongas datos personales reales en `datos_prueba/`.
+
+## Qué protege la migración 001 (50 pruebas)
+- Un visitante sin sesión no puede leer teléfonos, direcciones de agencias ni la lista de administradores.
+- Nadie puede subirse su propio nivel de verificación, cambiar su tipo de cuenta ni aprobar su propia agencia.
+- Solo pueden publicar carros las cuentas "habilitadas" o con una agencia verificada.
+- Nadie puede editar perfiles, carros o favoritos de otra persona.
+- Un carro ocultado por moderación desaparece para el público (también sus fotos).
+- Cada cambio de estado de un carro queda en un historial que nadie puede editar a mano.
+
+## Qué hace y protege la migración 002 (50 pruebas)
+- Al emitir una alerta, la base de datos avisa **solo** a quienes tienen su zona a 15 km o menos
+  y aceptaron recibir alertas (probado con personas a 2.4, 7.9, 13.9, 15.02, 17 y 25 km).
+- El punto exacto donde se vio el carro es privado; el público ve un punto aproximado (≈ 1 km).
+- Las zonas de alerta son privadas y se guardan redondeadas.
+- El teléfono del dueño solo se entrega si él lo autorizó, la alerta sigue activa y quien lo pide tiene sesión.
+- Límites contra abuso: 2 alertas activas, 3 alertas cada 24 horas, 5 avistamientos por persona y alerta al día.
+- Las alertas vencen a los 30 días; las vencidas u ocultas no envían avisos.
+- Al marcar el carro como recuperado, se avisa a todas las personas que la recibieron.
+- Nadie puede crear notificaciones falsas ni ver las de otras personas.
+
+## Qué protege la migración 003 (12 pruebas)
+- Registrarse nunca crea administradores; pedir "administrador" da una cuenta de comprador.
+- La fecha de aceptación del aviso solo la pone la base de datos (al registrarse o con `aceptar_aviso_privacidad()`).
+
+## Qué protege la migración 004 (19 pruebas)
+- Cada persona solo sube y borra fotos en su carpeta (`fotos-alertas/<su id>/`). Solo JPEG, máximo 5 MB.
+- Una alerta solo puede usar una foto de la carpeta de quien la emite.
+- `emitir_alerta()` guarda alerta y ubicación juntas: si una falla, no se guarda nada.
+- Renovar: solo la dueña, solo alertas activas, solo con 7 días o menos, respetando el límite de 2.
+
+Las pruebas están en `tests/sql/`. Usan un PostgreSQL local que imita Supabase; **no** se ejecutan en Supabase.

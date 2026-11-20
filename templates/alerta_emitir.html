@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% import "componentes.html" as c %}
+{% block titulo %}Emitir una alerta{% endblock %}
+
+{% block estilos_extra %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+<section class="encabezado-alerta">
+  <div class="container py-4">
+    <span class="etiqueta-alerta"><i class="bi bi-broadcast"></i> Alerta Ruedas</span>
+    <h1 class="titulo-pagina mt-2 mb-1">¿Te robaron tu carro?</h1>
+    <p class="mb-0">Avisaremos a las personas con alertas activadas a {{ radio_km }} km o menos del lugar donde se vio por última vez.</p>
+  </div>
+</section>
+
+<div class="container mt-4">
+  {% if modo_ejemplo %}
+    {{ c.aviso_etapa("Emitir alertas necesita Supabase. Este es el formulario que llenarás.") }}
+  {% elif not usuario_sesion %}
+    <div class="tarjeta p-3 d-flex flex-wrap gap-3 align-items-center">
+      <i class="bi bi-person-lock fs-3 text-salvia"></i>
+      <span class="flex-grow-1">Para emitir una alerta necesitas una cuenta. Así puedes recibir los avisos de "Lo vi".</span>
+      <a class="btn btn-naranja" href="{{ url_for('iniciar_sesion', siguiente=url_for('emitir_alerta')) }}">Iniciar sesión</a>
+      <a class="btn btn-contorno" href="{{ url_for('registro') }}">Crear cuenta</a>
+    </div>
+  {% endif %}
+
+  <div class="row g-4 mt-1">
+    <div class="col-lg-7">
+      <form method="post" enctype="multipart/form-data" class="tarjeta p-4" novalidate aria-label="Formulario de alerta">
+        {{ c.csrf() }}
+        <fieldset {% if modo_ejemplo or not usuario_sesion %}disabled{% endif %}>
+          <h2 class="h6 mb-3">1. Tu carro</h2>
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="a-foto" class="form-label small fw-semibold">Foto reciente (clara y de frente)</label>
+              <input id="a-foto" name="foto" type="file" class="form-control" accept="image/jpeg,image/png,image/webp"
+                     required data-vista-previa="a-foto-previa" aria-describedby="a-foto-ayuda">
+              <p class="ayuda mb-0" id="a-foto-ayuda">JPG, PNG o WebP, hasta 8 MB. Le quitamos los datos ocultos (como la ubicación GPS de la cámara) antes de publicarla.
+                {% if datos.get('nombre_carro') %}<strong>Vuelve a elegir la foto.</strong>{% endif %}</p>
+              <img id="a-foto-previa" class="foto-previa mt-2" alt="Vista previa de la foto" hidden>
+            </div>
+            <div class="col-sm-6">
+              <label for="a-nombre" class="form-label small fw-semibold">Marca y modelo</label>
+              <input id="a-nombre" name="nombre_carro" class="form-control" required maxlength="60"
+                     placeholder="Nissan Tsuru" value="{{ datos.get('nombre_carro', '') }}">
+            </div>
+            <div class="col-sm-6">
+              <label for="a-carroceria" class="form-label small fw-semibold">Tipo</label>
+              <select id="a-carroceria" name="carroceria" class="form-select" required>
+                {% for valor, texto in carrocerias.items() %}
+                <option value="{{ valor }}" {{ 'selected' if datos.get('carroceria') == valor }}>{{ texto }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label for="a-transmision" class="form-label small fw-semibold">Transmisión</label>
+              <select id="a-transmision" name="transmision" class="form-select" required>
+                <option value="">Elige…</option>
+                {% for valor, texto in transmisiones.items() %}
+                <option value="{{ valor }}" {{ 'selected' if datos.get('transmision') == valor }}>{{ texto }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label for="a-tamano" class="form-label small fw-semibold">Tamaño</label>
+              <select id="a-tamano" name="tamano" class="form-select" required>
+                <option value="">Elige…</option>
+                {% for valor, texto in tamanos.items() %}
+                <option value="{{ valor }}" {{ 'selected' if datos.get('tamano') == valor }}>{{ texto }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label for="a-anio" class="form-label small fw-semibold">Año</label>
+              <input id="a-anio" name="anio_modelo" class="form-control" maxlength="40" placeholder="2015"
+                     value="{{ datos.get('anio_modelo', '') }}">
+            </div>
+            <div class="col-sm-6">
+              <label for="a-version" class="form-label small fw-semibold">Versión</label>
+              <input id="a-version" name="version" class="form-control" maxlength="60" placeholder="GS II"
+                     value="{{ datos.get('version', '') }}">
+            </div>
+            <div class="col-sm-6">
+              <label for="a-color" class="form-label small fw-semibold">Color</label>
+              <input id="a-color" name="color" class="form-control" required maxlength="80" placeholder="Blanco"
+                     value="{{ datos.get('color', '') }}">
+            </div>
+            <div class="col-12">
+              <label for="a-senas" class="form-label small fw-semibold">Señas particulares</label>
+              <textarea id="a-senas" name="senas_particulares" class="form-control" rows="2" maxlength="500"
+                        placeholder="Calcomanía en el medallón, golpe en la salpicadera…">{{ datos.get('senas_particulares', '') }}</textarea>
+            </div>
+            <div class="col-12">
+              <label for="a-placas" class="form-label small fw-semibold">Placas</label>
+              <input id="a-placas" name="placas" class="form-control" maxlength="200" placeholder="De Baja California, terminación 47"
+                     value="{{ datos.get('placas', '') }}">
+            </div>
+            <div class="col-12">
+              <label for="a-descripcion" class="form-label small fw-semibold">¿Qué pasó?</label>
+              <textarea id="a-descripcion" name="descripcion" class="form-control" rows="2" maxlength="1000"
+                        placeholder="Lo dejé estacionado y al volver ya no estaba.">{{ datos.get('descripcion', '') }}</textarea>
+            </div>
+          </div>
+
+          <h2 class="h6 mt-4 mb-3">2. Dónde y cuándo se vio por última vez</h2>
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="a-zona" class="form-label small fw-semibold">Zona o referencia</label>
+              <input id="a-zona" name="zona_referencia" class="form-control" required maxlength="120"
+                     placeholder="Centro, cerca del Parque Teniente Guerrero" value="{{ datos.get('zona_referencia', '') }}">
+              <p class="ayuda mb-0">No escribas tu dirección exacta: una referencia es suficiente.</p>
+            </div>
+            <div class="col-sm-6">
+              <label for="a-fecha" class="form-label small fw-semibold">Fecha y hora</label>
+              <input id="a-fecha" name="visto_por_ultima_vez" type="datetime-local" class="form-control" required
+                     value="{{ datos.get('visto_por_ultima_vez', '') }}">
+            </div>
+            <div class="col-sm-6 d-flex align-items-end">
+              <button type="button" class="btn btn-contorno w-100" id="a-usar-ubicacion"><i class="bi bi-crosshair"></i> Usar mi ubicación</button>
+            </div>
+            <div class="col-12">
+              <p class="small fw-semibold mb-1">Toca el mapa para marcar el lugar</p>
+              <div class="mapa-selector" data-selector-mapa data-lat-input="a-latitud" data-lng-input="a-longitud"
+                   data-radio-km="{{ radio_km }}" data-boton-ubicacion="a-usar-ubicacion" data-estado="a-estado-mapa"
+                   role="application" aria-label="Mapa para marcar dónde se vio por última vez"></div>
+              <p class="ayuda mb-0" id="a-estado-mapa" role="status">El círculo muestra hasta dónde llegará el aviso ({{ radio_km }} km). El punto exacto solo lo verás tú; las demás personas verán una zona aproximada de 1 km.</p>
+              <input type="hidden" name="latitud" id="a-latitud" value="{{ datos.get('latitud', '') }}">
+              <input type="hidden" name="longitud" id="a-longitud" value="{{ datos.get('longitud', '') }}">
+            </div>
+          </div>
+
+          <h2 class="h6 mt-4 mb-3">3. Cómo pueden contactarte</h2>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="mostrar_telefono" value="si" id="a-telefono"
+                   {{ 'checked' if datos.get('mostrar_telefono') == 'si' }}>
+            <label class="form-check-label small" for="a-telefono">Mostrar mi teléfono a personas con cuenta en Ruedas.
+              Si no lo marcas, te avisarán solo por Ruedas (más seguro contra estafas). Tu teléfono se guarda en <a href="{{ url_for('mi_cuenta') }}">Mi cuenta</a>.</label>
+          </div>
+
+          <button class="btn btn-alerta btn-lg w-100 mt-4" type="submit"><i class="bi bi-broadcast"></i> Emitir alerta</button>
+        </fieldset>
+      </form>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="tarjeta p-4">
+        <h2 class="h6">Así verán tu alerta las personas cercanas</h2>
+        <p class="small texto-suave">Ejemplo con datos ficticios:</p>
+        {{ c.notificacion_previa(ejemplo, radio_km) }}
+      </div>
+      <div class="tarjeta p-4 mt-4">
+        <h2 class="h6">Reglas de las alertas</h2>
+        <ul class="small mb-0">
+          <li>Llega a quienes eligieron recibir alertas y tienen su zona a {{ radio_km }} km o menos.</li>
+          <li>Puedes tener hasta 2 alertas activas y emitir hasta 3 cada 24 horas.</li>
+          <li>Dura 30 días. Podrás renovarla desde la alerta cuando falten 7 días o menos.</li>
+          <li>Cuando aparezca, márcalo como recuperado: avisaremos a quienes ayudaron.</li>
+          <li>La alerta no sustituye tu denuncia: repórtalo también al 911 y ante la fiscalía.</li>
+          <li>Las alertas falsas pueden ser reportadas y ocultadas por moderación.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="{{ url_for('static', filename='js/mapa_selector.js') }}"></script>
+{% endblock %}

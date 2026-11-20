@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% import "componentes.html" as c %}
+{% block titulo %}Se busca: {{ alerta.nombre }}{% endblock %}
+
+{% block estilos_extra %}
+  <!-- Leaflet: librería gratuita de mapas -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block contenido %}
+{% if vigente %}
+<section class="encabezado-alerta">
+  <div class="container py-3 d-flex flex-wrap align-items-center gap-2">
+    <span class="etiqueta-alerta"><i class="bi bi-broadcast"></i> Alerta Ruedas · Se busca</span>
+    <span class="small">Emitida {{ alerta.creada_en|hace_tiempo }}</span>
+  </div>
+</section>
+{% else %}
+<section class="encabezado-pagina">
+  <div class="container py-3">
+    {% if alerta.estado == 'recuperado' %}
+      <span class="insignia estado-vendido"><i class="bi bi-check-circle-fill"></i> ¡Ya fue recuperado!</span>
+    {% else %}
+      <span class="insignia insignia-pendiente"><i class="bi bi-x-circle"></i> Alerta cerrada</span>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<div class="container mt-4">
+  <nav aria-label="Ruta de navegación" class="small mb-3">
+    <a href="{{ url_for('alertas') }}"><i class="bi bi-arrow-left"></i> Todas las alertas</a>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Foto y datos -->
+    <div class="col-lg-7">
+      <div class="tarjeta overflow-hidden">
+        <div class="row g-0">
+          <div class="col-sm-5">{{ c.foto_carro(alerta, "foto-alerta") }}</div>
+          <div class="col-sm-7 p-4">
+            <h1 class="titulo-pagina mb-1">{{ alerta.nombre }}</h1>
+            <p class="texto-suave mb-3">{{ alerta.carroceria|capitalize }} · {{ alerta.version }}</p>
+            <div class="row g-2">
+              {% set datos = [('Transmisión', alerta.transmision|capitalize), ('Tamaño', alerta.tamano|capitalize),
+                              ('Año', alerta.anio_modelo or 'No se sabe'), ('Color', alerta.color)] %}
+              {% for etiqueta, valor in datos %}
+              <div class="col-6"><div class="dato"><small>{{ etiqueta }}</small><strong>{{ valor }}</strong></div></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tarjeta p-4 mt-4">
+        <h2 class="h6">Rasgos para reconocerlo</h2>
+        <dl class="lista-rasgos mb-0">
+          {% if alerta.senas_particulares %}<dt>Señas particulares</dt><dd>{{ alerta.senas_particulares }}</dd>{% endif %}
+          {% if alerta.placas %}<dt>Placas</dt><dd>{{ alerta.placas }}</dd>{% endif %}
+          {% if alerta.descripcion %}<dt>Qué pasó</dt><dd>{{ alerta.descripcion }}</dd>{% endif %}
+        </dl>
+      </div>
+
+      <div class="tarjeta p-4 mt-4">
+        <h2 class="h6"><i class="bi bi-geo-alt text-naranja"></i> Visto por última vez</h2>
+        <p class="mb-1 fw-semibold">{{ alerta.zona_referencia }}, {{ alerta.municipio }}</p>
+        <p class="small texto-suave">{{ alerta.visto_por_ultima_vez|fecha_local }} ({{ alerta.visto_por_ultima_vez|hace_tiempo }})</p>
+        {% if alerta.latitud_aprox is not none %}
+        <div id="mapa-alerta" class="mapa-alerta" role="img"
+             aria-label="Mapa de la zona aproximada donde se vio el {{ alerta.nombre }}"
+             data-lat="{{ alerta.latitud_aprox }}" data-lng="{{ alerta.longitud_aprox }}" data-radio-km="{{ radio_km }}"
+             data-avistamientos='{{ puntos_avistamientos|tojson }}'></div>
+        <p class="small texto-suave mt-2 mb-0"><span class="leyenda leyenda-zona"></span> Zona aproximada (no es la dirección exacta) ·
+          <span class="leyenda leyenda-radio"></span> Radio de aviso de {{ radio_km }} km
+          {% if es_duena and avistamientos %}· <span class="leyenda leyenda-avistamiento"></span> Avistamientos{% endif %}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Acciones y contacto -->
+    <div class="col-lg-5">
+      {% if vigente and es_duena %}
+      <!-- Panel de la dueña -->
+      <div class="tarjeta p-4 tarjeta-accion">
+        <h2 class="h5">Tu alerta</h2>
+        <p class="small mb-2">Activa hasta el <strong>{{ alerta.expira_en|fecha_local }}</strong>.</p>
+        {% if alerta.personas_avisadas %}
+        <p class="small mb-3"><i class="bi bi-people-fill text-salvia"></i> Se avisó a <strong>{{ alerta.personas_avisadas }}</strong> {{ 'persona' if alerta.personas_avisadas == 1 else 'personas' }} a {{ radio_km }} km o menos.</p>
+        {% else %}
+        <p class="small texto-suave mb-3">Todavía no hay personas con alertas activadas en esa zona. Compártela para que más gente la vea.</p>
+        {% endif %}
+        <button type="button" class="btn btn-contorno w-100 boton-compartir"
+                data-titulo="Se busca: {{ alerta.nombre }}" data-texto="Ayuda a localizar este {{ alerta.nombre }} robado, visto en {{ alerta.zona_referencia }}.">
+          <i class="bi bi-share"></i> Compartir alerta
+        </button>
+        <p class="small texto-suave text-center mt-2 mb-0 estado-compartir" role="status"></p>
+        {% if dias_restantes is not none and dias_restantes <= 7 %}
+        <form method="post" action="{{ url_for('renovar_alerta', alerta_id=alerta.id) }}" class="mt-2">
+          {{ c.csrf() }}
+          <button class="btn btn-contorno w-100" type="submit"><i class="bi bi-arrow-repeat"></i> Renovar 30 días más</button>
+        </form>
+        {% endif %}
+        <details class="cerrar-alerta mt-3">
+          <summary class="btn btn-salvia w-100">Cerrar la alerta</summary>
+          <div class="pt-3">
+            <form method="post" action="{{ url_for('cerrar_alerta', alerta_id=alerta.id) }}">
+              {{ c.csrf() }}
+              <input type="hidden" name="estado" value="recuperado">
+              <button class="btn btn-naranja w-100" type="submit"><i class="bi bi-check-circle-fill"></i> ¡Ya apareció!</button>
+            </form>
+            <p class="ayuda mt-1">Avisaremos a quienes recibieron la alerta.</p>
+            <form method="post" action="{{ url_for('cerrar_alerta', alerta_id=alerta.id) }}" class="mt-2">
+              {{ c.csrf() }}
+              <input type="hidden" name="estado" value="cancelada">
+              <button class="btn btn-contorno w-100" type="submit">Cancelar la alerta</button>
+            </form>
+            <p class="ayuda mt-1 mb-0">Una alerta cerrada no se puede volver a abrir.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="tarjeta p-4 mt-4" id="avistamientos">
+        <h2 class="h6"><i class="bi bi-eye text-naranja"></i> Avistamientos ({{ avistamientos|length }})</h2>
+        {% if avistamientos %}
+        <p class="ayuda">Solo tú ves esta lista. Los puntos marcados aparecen en el mapa.</p>
+        <ol class="lista-avistamientos mb-0">
+          {% for a in avistamientos %}
+          <li>
+            <strong>{{ a.lugar }}</strong>
+            <span class="d-block small texto-suave">{{ a.visto_en|fecha_local }} ({{ a.visto_en|hace_tiempo }}) · por {{ a.persona }}</span>
+            {% if a.comentario %}<span class="d-block small">{{ a.comentario }}</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="small texto-suave mb-0">Aún no te han reportado avistamientos. Te avisaremos en tus notificaciones.</p>
+        {% endif %}
+      </div>
+
+      {% elif vigente %}
+      <!-- Personas que la ven -->
+      <div class="tarjeta p-4 tarjeta-accion" id="lo-vi">
+        <h2 class="h5">¿Lo viste?</h2>
+        <p class="small">Avísale a su dueño dónde y cuándo. No te acerques ni enfrentes a nadie: si hay riesgo, llama al 911.</p>
+        {% if modo_ejemplo %}
+          <button class="btn btn-alerta btn-lg w-100" disabled><i class="bi bi-eye"></i> Lo vi</button>
+          {{ c.aviso_etapa("Reportar avistamientos necesita Supabase.") }}
+        {% elif not usuario_sesion %}
+          <a class="btn btn-alerta btn-lg w-100" href="{{ url_for('iniciar_sesion', siguiente=url_for('detalle_alerta', alerta_id=alerta.id)) }}">
+            <i class="bi bi-eye"></i> Inicia sesión para avisar</a>
+          <p class="ayuda mt-2 mb-0">Pedimos una cuenta para evitar avisos falsos.</p>
+        {% else %}
+          <details class="formulario-lo-vi" {% if request.args.get('lo_vi') %}open{% endif %}>
+            <summary class="btn btn-alerta btn-lg w-100"><i class="bi bi-eye"></i> Lo vi</summary>
+            <form method="post" action="{{ url_for('reportar_avistamiento', alerta_id=alerta.id) }}" class="pt-3" novalidate>
+              {{ c.csrf() }}
+              <label for="v-lugar" class="form-label small fw-semibold">¿Dónde lo viste?</label>
+              <input id="v-lugar" name="lugar" class="form-control mb-3" required maxlength="200" placeholder="Calle Segunda y Constitución">
+              <label for="v-fecha" class="form-label small fw-semibold">¿Cuándo?</label>
+              <input id="v-fecha" name="visto_en" type="datetime-local" class="form-control mb-3" required value="{{ ahora_local }}">
+              <label for="v-comentario" class="form-label small fw-semibold">Comentario (opcional)</label>
+              <textarea id="v-comentario" name="comentario" class="form-control mb-3" rows="2" maxlength="500"
+                        placeholder="Estaba estacionado frente a una tienda, sin placas"></textarea>
+              <p class="small fw-semibold mb-1">Marca el lugar en el mapa (opcional)</p>
+              <div class="mapa-selector mapa-selector-chico" data-selector-mapa data-lat-input="v-latitud" data-lng-input="v-longitud"
+                   data-boton-ubicacion="v-usar-ubicacion" data-estado="v-estado-mapa"
+                   role="application" aria-label="Mapa para marcar dónde lo viste"></div>
+              <button type="button" class="btn btn-contorno w-100 mt-2" id="v-usar-ubicacion"><i class="bi bi-crosshair"></i> Usar mi ubicación</button>
+              <p class="ayuda" id="v-estado-mapa" role="status">Solo el dueño verá este punto.</p>
+              <input type="hidden" name="latitud" id="v-latitud">
+              <input type="hidden" name="longitud" id="v-longitud">
+              <button class="btn btn-alerta w-100" type="submit">Enviar aviso al dueño</button>
+            </form>
+          </details>
+        {% endif %}
+        <button type="button" class="btn btn-contorno w-100 mt-3 boton-compartir"
+                data-titulo="Se busca: {{ alerta.nombre }}" data-texto="Ayuda a localizar este {{ alerta.nombre }} robado, visto en {{ alerta.zona_referencia }}.">
+          <i class="bi bi-share"></i> Compartir alerta
+        </button>
+        <p class="small texto-suave text-center mt-2 mb-0 estado-compartir" role="status"></p>
+        {% if alerta.personas_avisadas %}
+        <p class="small text-center mt-3 mb-0"><i class="bi bi-people-fill text-salvia"></i> Se avisó a <strong>{{ alerta.personas_avisadas }}</strong> {{ 'persona' if alerta.personas_avisadas == 1 else 'personas' }} a {{ radio_km }} km o menos.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="tarjeta p-4 mt-4">
+        <h2 class="h6">Quien lo busca</h2>
+        <div class="d-flex align-items-center gap-3 my-3">
+          <span class="icono-circulo"><i class="bi bi-person"></i></span>
+          <div>
+            <strong>{{ alerta.emisor.nombre_publico }}</strong><br>
+            <small class="texto-suave">
+              {% if alerta.emisor.creado_en %}En Ruedas desde {{ alerta.emisor.creado_en|mes_anio }}{% endif %}
+            </small>
+          </div>
+        </div>
+        {% if alerta.emisor.nivel_verificacion in ['identidad_verificada', 'habilitada'] %}
+          <span class="insignia insignia-verificado"><i class="bi bi-patch-check-fill"></i> Identidad verificada</span>
+        {% else %}
+          <span class="insignia insignia-pendiente"><i class="bi bi-person"></i> Cuenta registrada (identidad no verificada)</span>
+        {% endif %}
+
+        {% if vigente and not es_duena %}
+        <hr>
+        {% if alerta.mostrar_telefono and telefono %}
+          <p class="small mb-1"><i class="bi bi-telephone"></i> Teléfono del dueño:</p>
+          <p class="telefono-contacto mb-1">{{ telefono }}</p>
+          <p class="ayuda mb-0">No compartas este número fuera de Ruedas.</p>
+        {% elif alerta.mostrar_telefono and usuario_sesion %}
+          <p class="small mb-0"><i class="bi bi-telephone"></i> El dueño aún no registró su teléfono. Usa el botón <strong>Lo vi</strong>.</p>
+        {% elif alerta.mostrar_telefono %}
+          <p class="small mb-2"><i class="bi bi-telephone"></i> El dueño autorizó mostrar su teléfono a personas con cuenta en Ruedas.</p>
+          <a href="{{ url_for('iniciar_sesion', siguiente=url_for('detalle_alerta', alerta_id=alerta.id)) }}" class="btn btn-salvia w-100">Inicia sesión para ver el teléfono</a>
+        {% else %}
+          <p class="small mb-0"><i class="bi bi-chat-dots"></i> El dueño prefiere recibir avisos por Ruedas. Usa el botón <strong>Lo vi</strong>.</p>
+        {% endif %}
+        {% endif %}
+      </div>
+
+      <div class="tarjeta p-4 mt-4 aviso-seguridad">
+        <h2 class="h6"><i class="bi bi-shield-exclamation"></i> Para tu seguridad</h2>
+        <ul class="small mb-0">
+          <li>Si alguien dice tenerlo y te pide dinero antes de verlo, puede ser una estafa.</li>
+          <li>Reúnete en un lugar público y acompañado.</li>
+          <li>Ruedas muestra lo que publica el dueño, pero no puede confirmar que todos los datos sean ciertos.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if vigente %}
+<!-- Celular: acciones principales siempre a la mano -->
+<div class="barra-accion-movil d-lg-none">
+  {% if es_duena %}
+  <a class="btn btn-salvia flex-grow-1" href="#avistamientos"><i class="bi bi-eye"></i> Avistamientos ({{ avistamientos|length }})</a>
+  {% elif usuario_sesion and not modo_ejemplo %}
+  <a class="btn btn-alerta flex-grow-1" href="{{ url_for('detalle_alerta', alerta_id=alerta.id, lo_vi=1) }}#lo-vi"><i class="bi bi-eye"></i> Lo vi</a>
+  {% elif not modo_ejemplo %}
+  <a class="btn btn-alerta flex-grow-1" href="{{ url_for('iniciar_sesion', siguiente=url_for('detalle_alerta', alerta_id=alerta.id)) }}"><i class="bi bi-eye"></i> Lo vi</a>
+  {% else %}
+  <button class="btn btn-alerta flex-grow-1" disabled><i class="bi bi-eye"></i> Lo vi</button>
+  {% endif %}
+  <button type="button" class="btn btn-contorno boton-compartir" aria-label="Compartir alerta"
+          data-titulo="Se busca: {{ alerta.nombre }}" data-texto="Ayuda a localizar este {{ alerta.nombre }} robado, visto en {{ alerta.zona_referencia }}.">
+    <i class="bi bi-share"></i>
+  </button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts_extra %}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="{{ url_for('static', filename='js/mapa_selector.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/alertas.js') }}"></script>
+{% endblock %}
