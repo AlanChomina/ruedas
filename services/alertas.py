@@ -81,6 +81,7 @@ def fila_a_alerta(fila):
     from flask import current_app
 
     emisor = fila.get("emisor") or {}
+    ruta_foto = (fila.get("ruta_foto") or "").strip() or None
     return {
         "id": fila["id"],
         "emisor_id": fila.get("emisor_id"),
@@ -103,8 +104,10 @@ def fila_a_alerta(fila):
         "longitud_aprox": float(fila["longitud_aprox"]) if fila.get("longitud_aprox") is not None else None,
         "mostrar_telefono": bool(fila.get("mostrar_telefono")),
         "estado": fila["estado"],
-        "foto": None,  # foto local (solo modo de ejemplo)
-        "foto_url": url_publica(current_app.config["SUPABASE_URL"], fila.get("ruta_foto")),
+        # Nombre simple (ej. "tsuru.jpg") = foto de ejemplo en static/images/carros/.
+        # Ruta con carpeta = foto subida a Supabase Storage.
+        "foto": ruta_foto if ruta_foto and "/" not in ruta_foto and ".." not in ruta_foto else None,
+        "foto_url": url_publica(current_app.config["SUPABASE_URL"], ruta_foto) if ruta_foto and "/" in ruta_foto else None,
         "personas_avisadas": None,
         "emisor": {
             "nombre_publico": emisor.get("nombre_publico") or "Usuario de Ruedas",
