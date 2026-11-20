@@ -88,11 +88,6 @@
     </div>
   </nav>
 
-  {% if modo_ejemplo %}
-  <div class="banda-ejemplo" role="status">
-    <div class="container"><i class="bi bi-info-circle"></i> Modo de ejemplo: los carros, agencias y alertas son ficticios. Configura Supabase en <code>.env</code> para usar datos reales.</div>
-  </div>
-  {% endif %}
   {% with mensajes = get_flashed_messages(with_categories=true) %}
   {% if mensajes %}
   <div class="container mt-3" role="status" aria-live="polite">
@@ -135,6 +130,7 @@
           <ul class="list-unstyled small">
             <li><a href="{{ url_for('acerca') }}">Cómo funciona</a></li>
             <li><a href="{{ url_for('privacidad') }}">Aviso de privacidad</a></li>
+            <li><a href="{{ url_for('creditos') }}">Créditos de las fotos</a></li>
           </ul>
         </div>
       </div>

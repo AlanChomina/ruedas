@@ -22,7 +22,7 @@ def cliente():
 
 
 @pytest.mark.parametrize("ruta", [
-    "/", "/comprar", "/robados-y-recuperados", "/agencias", "/comunidad",
+    "/", "/comprar", "/robados-y-recuperados", "/agencias", "/comunidad", "/creditos",
     "/acerca", "/iniciar-sesion", "/registro", "/privacidad", "/carro/1",
 ])
 def test_paginas_cargan(cliente, ruta):
@@ -31,8 +31,9 @@ def test_paginas_cargan(cliente, ruta):
     assert "Ruedas" in respuesta.get_data(as_text=True)
 
 
-def test_aviso_modo_ejemplo(cliente):
-    assert "Modo de ejemplo" in cliente.get("/").get_data(as_text=True)
+def test_sin_aviso_modo_ejemplo(cliente):
+    # El aviso "Modo de ejemplo" se quitó de la página a petición.
+    assert "Modo de ejemplo" not in cliente.get("/").get_data(as_text=True)
 
 
 def test_pagina_inexistente_da_404(cliente):

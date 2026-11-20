@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Créditos de las fotos{% endblock %}
+
+{% block contenido %}
+<div class="container my-5" style="max-width: 860px;">
+  <div class="tarjeta p-4 p-lg-5">
+    <h1 class="titulo-pagina">Créditos de las fotos</h1>
+    <p>Las fotos de ejemplo vienen de <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a> y se usan bajo las licencias libres que eligieron sus autores. Todas se redujeron de tamaño; las que tienen licencia CC BY-SA la conservan.</p>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle small mb-0">
+        <thead>
+          <tr><th scope="col">Carro</th><th scope="col">Autor</th><th scope="col">Licencia</th><th scope="col">Original</th></tr>
+        </thead>
+        <tbody>
+          {% for f in creditos %}
+          <tr>
+            <td>{{ f.carro }}</td>
+            <td>{{ f.autor }}</td>
+            <td>{% if f.url_licencia %}<a href="{{ f.url_licencia }}" target="_blank" rel="noopener">{{ f.licencia }}</a>{% else %}{{ f.licencia }}{% endif %}</td>
+            <td><a href="{{ f.pagina }}" target="_blank" rel="noopener">Ver en Commons</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

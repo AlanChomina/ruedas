@@ -182,8 +182,6 @@ a.tarjeta, .enlace-tarjeta { display: block; color: inherit; text-decoration: no
 .opcion-cuenta { cursor: not-allowed; }
 .lista-niveles li { margin-bottom: .5rem; }
 
-.banda-ejemplo { background: #FFF1E8; color: #8A4A26; font-size: .85rem; padding: .45rem 0; border-bottom: 1px solid #FFD9C4; }
-.banda-ejemplo code { color: inherit; font-weight: 700; }
 
 /* ---------- Cuentas ---------- */
 .boton-usuario { display: inline-flex; align-items: center; gap: .5rem; background: var(--blanco); border: 1px solid var(--borde); padding: .35rem .9rem .35rem .4rem; }

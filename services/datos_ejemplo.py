@@ -82,7 +82,7 @@ _ahora = datetime.now(timezone.utc)
 
 ALERTAS = [
     {"id": "ejemplo-tsuru", "nombre": "Nissan Tsuru", "carroceria": "sedán", "version": "GS II", "transmision": "manual",
-     "tamano": "compacto", "anio_modelo": "2015", "color": "Blanco",
+     "tamano": "compacto", "anio_modelo": "2015", "color": "Gris plata",
      "senas_particulares": "Calcomanía de un águila en el medallón y golpe en la salpicadera izquierda.",
      "placas": "De Baja California, terminación 47.",
      "descripcion": "Lo dejé estacionado afuera del trabajo y al salir ya no estaba. Si lo ves, no te acerques ni enfrentes a nadie: avísame por aquí.",
@@ -92,9 +92,9 @@ ALERTAS = [
      "mostrar_telefono": True, "estado": "activa", "foto": "tsuru.jpg", "personas_avisadas": 148,
      "emisor": {"nombre_publico": "Mariana (ejemplo)", "creado_en": _ahora - timedelta(days=210),
                 "nivel_verificacion": "registrada"}},
-    {"id": "ejemplo-silverado", "nombre": "Chevrolet Silverado", "carroceria": "pickup", "version": "LT doble cabina", "transmision": "automática",
+    {"id": "ejemplo-silverado", "nombre": "Chevrolet Silverado", "carroceria": "pickup", "version": "LT Z71 doble cabina", "transmision": "automática",
      "tamano": "grande", "anio_modelo": "2012", "color": "Negro",
-     "senas_particulares": "Tapa rígida en la caja y faro derecho estrellado.",
+     "senas_particulares": "Emblema Z71 en la caja y faro derecho estrellado.",
      "placas": "Sin placa delantera.",
      "descripcion": "Se la llevaron de la cochera durante la madrugada. Trae herramienta de trabajo en la caja.",
      "zona_referencia": "Playas de Tijuana, por el Malecón", "municipio": "Tijuana",

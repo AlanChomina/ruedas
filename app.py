@@ -12,6 +12,7 @@ from flask import Flask, abort, render_template, request, session
 from config import Config
 from services import alertas as servicio_alertas
 from services import carros as servicio
+from services.creditos_fotos import CREDITOS_FOTOS
 from services.datos_ejemplo import PUBLICACIONES
 from services.estados import ESTADOS
 from services.seguridad import token_csrf, verificar_csrf
@@ -142,6 +143,12 @@ registrar_rutas_cuentas(app)
 @app.route("/privacidad")
 def privacidad():
     return render_template("privacidad.html")
+
+
+@app.route("/creditos")
+def creditos():
+    # Autores y licencias de las fotos de ejemplo (lo piden sus licencias).
+    return render_template("creditos.html", creditos=CREDITOS_FOTOS)
 
 
 # ---------------------------------------------------------------------------
